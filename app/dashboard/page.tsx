@@ -82,7 +82,7 @@ export default function DashboardPage() {
   };
 
 return (
-  <div className="flex bg-black text-white">
+  <div className="flex bg-black text-white overflow-x-hidden">
 
     <Sidebar />
 
@@ -98,7 +98,7 @@ return (
       </p>
 
       {/* Templates */}
-      <div className="grid md:grid-cols-4 gap-6 mt-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
 
         {templates.map((template, index) => (
 
