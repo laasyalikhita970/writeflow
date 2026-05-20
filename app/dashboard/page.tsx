@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
+import ReactMarkdown from "react-markdown";
 
 const templates = [
   {
@@ -29,14 +30,30 @@ export default function DashboardPage() {
   const [result, setResult] = useState("");
   const [history, setHistory] = useState<string[]>([]);
 
-  // Load history on page refresh
+  // Fetch history from Supabase
   useEffect(() => {
 
-    const savedHistory = localStorage.getItem("ai-history");
+    const fetchHistory = async () => {
 
-    if (savedHistory) {
-      setHistory(JSON.parse(savedHistory));
-    }
+      try {
+
+        const response = await fetch("/api/history");
+
+        const data = await response.json();
+
+        setHistory(
+          data.map((item: any) => item.response)
+        );
+
+      } catch (error) {
+
+        console.log(error);
+
+      }
+
+    };
+
+    fetchHistory();
 
   }, []);
 
@@ -60,15 +77,11 @@ export default function DashboardPage() {
 
       setResult(data.content);
 
-      // Save history
-      const updatedHistory = [data.content, ...history];
-
-      setHistory(updatedHistory);
-
-      localStorage.setItem(
-        "ai-history",
-        JSON.stringify(updatedHistory)
-      );
+      // Update history instantly
+      setHistory((prev) => [
+        data.content,
+        ...prev,
+      ]);
 
     } catch (error) {
 
@@ -81,144 +94,164 @@ export default function DashboardPage() {
     }
   };
 
-return (
-  <div className="flex bg-black text-white overflow-x-hidden">
+  return (
 
-    <Sidebar />
+    <div className="flex bg-black text-white overflow-x-hidden">
 
-    <div className="flex-1 p-10 min-h-screen">
+      <Sidebar />
 
-      {/* Heading */}
-      <h1 className="text-5xl font-bold">
-        AI Content Generator ✨
-      </h1>
+      <div className="flex-1 p-10 min-h-screen">
 
-      <p className="text-gray-400 mt-4">
-        Choose a template or write your own prompt.
-      </p>
+        {/* Heading */}
+        <h1 className="text-5xl font-bold">
+          AI Content Generator ✨
+        </h1>
 
-      {/* Templates */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
+        <p className="text-gray-400 mt-4">
+          Choose a template or write your own prompt.
+        </p>
 
-        {templates.map((template, index) => (
+        {/* Templates */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
 
-          <div
-            key={index}
-            onClick={() => setPrompt(template.prompt)}
-            className="bg-gray-900 border border-gray-800 rounded-2xl p-6 cursor-pointer hover:border-blue-500 transition"
-          >
+          {templates.map((template, index) => (
 
-            <h2 className="text-xl font-bold">
-              {template.title}
-            </h2>
-
-          </div>
-
-        ))}
-
-      </div>
-
-      {/* Input Section */}
-      <div className="mt-10">
-
-        <textarea
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Write your prompt here..."
-          className="w-full h-40 bg-gray-900 border border-gray-800 rounded-2xl p-5 outline-none resize-none"
-        />
-
-        <button
-          onClick={generateContent}
-          disabled={loading}
-          className="mt-6 bg-white text-black px-8 py-4 rounded-xl font-semibold hover:bg-gray-200 transition flex items-center gap-3 disabled:opacity-70"
-        >
-
-          {loading && (
-            <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
-          )}
-
-          {loading ? "Generating..." : "Generate Content"}
-
-        </button>
-
-      </div>
-
-      {/* AI Result */}
-      {result && (
-
-        <div className="mt-12 bg-gray-900 border border-gray-800 rounded-2xl p-8">
-
-          <div className="flex items-center justify-between mb-6">
-
-            <h2 className="text-2xl font-bold">
-              AI Response
-            </h2>
-
-            <button
-              onClick={() => navigator.clipboard.writeText(result)}
-              className="bg-white text-black px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-200 transition"
+            <div
+              key={index}
+              onClick={() => setPrompt(template.prompt)}
+              className="bg-gray-900 border border-gray-800 rounded-2xl p-6 cursor-pointer hover:border-blue-500 transition"
             >
-              Copy
-            </button>
 
-          </div>
+              <h2 className="text-xl font-bold">
+                {template.title}
+              </h2>
 
-          <p className="text-gray-300 whitespace-pre-wrap">
-            {result}
-          </p>
+            </div>
+
+          ))}
 
         </div>
 
-      )}
+        {/* Input */}
+        <div className="mt-10">
 
-      {/* History Section */}
-      {history.length > 0 && (
+          <textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="Write your prompt here..."
+            className="w-full h-40 bg-gray-900 border border-gray-800 rounded-2xl p-5 outline-none resize-none"
+          />
 
-        <div className="mt-16">
+          <button
+            onClick={generateContent}
+            disabled={loading}
+            className="mt-6 bg-white text-black px-8 py-4 rounded-xl font-semibold hover:bg-gray-200 transition flex items-center gap-3 disabled:opacity-70"
+          >
 
-          <div className="flex items-center justify-between mb-8">
+            {loading && (
+              <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+            )}
 
-  <h2 className="text-3xl font-bold">
-    History
-  </h2>
+            {loading
+              ? "Generating..."
+              : "Generate Content"}
 
-  <button
-    onClick={() => {
-      localStorage.removeItem("ai-history");
-      setHistory([]);
-    }}
-    className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-sm font-semibold transition"
-  >
-    Clear History
-  </button>
+          </button>
+
+        </div>
+
+        {/* Result */}
+        {result && (
+
+          <div className="mt-12 bg-gray-900 border border-gray-800 rounded-2xl p-8">
+
+            <div className="flex items-center justify-between mb-6">
+
+              <h2 className="text-2xl font-bold">
+                AI Response
+              </h2>
+
+              <button
+                onClick={() =>
+                  navigator.clipboard.writeText(result)
+                }
+                className="bg-white text-black px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-200 transition"
+              >
+                Copy
+              </button>
+
+            </div>
+
+            <div className="prose prose-invert max-w-none">
+
+  <ReactMarkdown>
+    {result}
+  </ReactMarkdown>
 
 </div>
 
-          <div className="space-y-6">
+          </div>
 
-            {history.map((item, index) => (
+        )}
 
-              <div
-                key={index}
-                className="bg-gray-900 border border-gray-800 rounded-2xl p-6"
+        {/* History */}
+        {history.length > 0 && (
+
+          <div className="mt-16">
+
+            <div className="flex items-center justify-between mb-8">
+
+              <h2 className="text-3xl font-bold">
+                History
+              </h2>
+
+              <button
+                onClick={async () => {
+
+  await fetch("/api/clear-history", {
+    method: "DELETE",
+  });
+
+  setHistory([]);
+
+}}
+                className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-sm font-semibold transition"
               >
+                Clear History
+              </button>
 
-                <p className="text-gray-300 whitespace-pre-wrap">
-                  {item}
-                </p>
+            </div>
 
-              </div>
+            <div className="space-y-6">
 
-            ))}
+              {history.map((item, index) => (
+
+                <div
+                  key={index}
+                  className="bg-gray-900 border border-gray-800 rounded-2xl p-6"
+                >
+
+                  <div className="prose prose-invert max-w-none">
+
+  <ReactMarkdown>
+    {item}
+  </ReactMarkdown>
+
+</div>
+
+                </div>
+
+              ))}
+
+            </div>
 
           </div>
 
-        </div>
+        )}
 
-      )}
+      </div>
 
     </div>
-    </div>
+
   );
 }

@@ -1,5 +1,6 @@
 import Groq from "groq-sdk";
 import { supabase } from "@/app/lib/supabase";
+import { auth } from "@clerk/nextjs/server";
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
@@ -8,6 +9,15 @@ const groq = new Groq({
 export async function POST(req: Request) {
 
   try {
+    const { userId } = await auth();
+
+if (!userId) {
+
+  return Response.json({
+    content: "Unauthorized",
+  });
+
+}
 
     const { prompt } = await req.json();
 
@@ -32,7 +42,7 @@ export async function POST(req: Request) {
         .from("history")
         .insert([
           {
-            user_id: "demo-user",
+            user_id: userId,
             prompt,
             response,
           },
