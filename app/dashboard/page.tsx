@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import ReactMarkdown from "react-markdown";
+import jsPDF from "jspdf";
 
 const templates = [
   {
@@ -92,22 +93,39 @@ export default function DashboardPage() {
       setLoading(false);
 
     }
+
+  };
+
+  // Download PDF
+  const downloadPDF = () => {
+
+    const doc = new jsPDF();
+
+    const splitText = doc.splitTextToSize(
+      result,
+      180
+    );
+
+    doc.text(splitText, 10, 10);
+
+    doc.save("writeflow-content.pdf");
+
   };
 
   return (
 
-    <div className="flex bg-black text-white overflow-x-hidden">
+    <div className="flex bg-black text-white overflow-x-hidden min-h-screen">
 
       <Sidebar />
 
-      <div className="flex-1 p-10 min-h-screen">
+      <div className="flex-1 p-6 sm:p-10 max-w-7xl mx-auto w-full">
 
         {/* Heading */}
-        <h1 className="text-5xl font-bold">
+        <h1 className="text-4xl sm:text-5xl font-bold">
           AI Content Generator ✨
         </h1>
 
-        <p className="text-gray-400 mt-4">
+        <p className="text-gray-400 mt-4 text-sm sm:text-base">
           Choose a template or write your own prompt.
         </p>
 
@@ -119,7 +137,7 @@ export default function DashboardPage() {
             <div
               key={index}
               onClick={() => setPrompt(template.prompt)}
-              className="bg-gray-900 border border-gray-800 rounded-2xl p-6 cursor-pointer hover:border-blue-500 transition"
+              className="bg-gray-900 border border-gray-800 rounded-2xl p-6 cursor-pointer hover:border-blue-500 hover:-translate-y-1 transition duration-300"
             >
 
               <h2 className="text-xl font-bold">
@@ -139,7 +157,7 @@ export default function DashboardPage() {
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             placeholder="Write your prompt here..."
-            className="w-full h-40 bg-gray-900 border border-gray-800 rounded-2xl p-5 outline-none resize-none"
+            className="w-full h-40 bg-gray-900 border border-gray-800 rounded-2xl p-5 outline-none resize-none focus:border-blue-500 transition"
           />
 
           <button
@@ -165,30 +183,56 @@ export default function DashboardPage() {
 
           <div className="mt-12 bg-gray-900 border border-gray-800 rounded-2xl p-8">
 
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
 
               <h2 className="text-2xl font-bold">
                 AI Response
               </h2>
 
-              <button
-                onClick={() =>
-                  navigator.clipboard.writeText(result)
-                }
-                className="bg-white text-black px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-200 transition"
-              >
-                Copy
-              </button>
+              <div className="flex gap-3">
+
+                <button
+                  onClick={() =>
+                    navigator.clipboard.writeText(result)
+                  }
+                  className="bg-white text-black px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-200 transition"
+                >
+                  Copy
+                </button>
+
+                <button
+                  onClick={downloadPDF}
+                  className="bg-blue-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition"
+                >
+                  Download PDF
+                </button>
+
+              </div>
 
             </div>
 
             <div className="prose prose-invert max-w-none">
 
-  <ReactMarkdown>
-    {result}
-  </ReactMarkdown>
+              <ReactMarkdown>
+                {result}
+              </ReactMarkdown>
 
-</div>
+            </div>
+
+            {/* Stats */}
+            <div className="flex gap-6 mt-6 text-sm text-gray-400">
+
+              <p>
+                Words: {
+                  result.trim().split(/\s+/).length
+                }
+              </p>
+
+              <p>
+                Characters: {result.length}
+              </p>
+
+            </div>
 
           </div>
 
@@ -199,7 +243,7 @@ export default function DashboardPage() {
 
           <div className="mt-16">
 
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between flex-wrap gap-4 mb-8">
 
               <h2 className="text-3xl font-bold">
                 History
@@ -208,13 +252,13 @@ export default function DashboardPage() {
               <button
                 onClick={async () => {
 
-  await fetch("/api/clear-history", {
-    method: "DELETE",
-  });
+                  await fetch("/api/clear-history", {
+                    method: "DELETE",
+                  });
 
-  setHistory([]);
+                  setHistory([]);
 
-}}
+                }}
                 className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-sm font-semibold transition"
               >
                 Clear History
@@ -233,11 +277,11 @@ export default function DashboardPage() {
 
                   <div className="prose prose-invert max-w-none">
 
-  <ReactMarkdown>
-    {item}
-  </ReactMarkdown>
+                    <ReactMarkdown>
+                      {item}
+                    </ReactMarkdown>
 
-</div>
+                  </div>
 
                 </div>
 
@@ -254,4 +298,5 @@ export default function DashboardPage() {
     </div>
 
   );
+
 }
